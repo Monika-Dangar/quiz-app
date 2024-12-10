@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <!-- Main Container -->
+    <div class="min-h-screen flex items-center justify-center">
+
+        <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+
+            <div id="inital-setup">
+                <!-- Quiz Title -->
+                <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Quiz Setup</h1>
+
+                <!-- Difficulty Level Selection -->
+                <div class="mb-6">
+                    <label for="difficulty" class="block text-lg font-medium text-gray-700">Select Difficulty</label>
+                    <select id="difficulty"
+                        class="mt-2 block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+
+                <!-- Category Selection -->
+                <div class="mb-6">
+                    <label for="category" class="block text-lg font-medium text-gray-700">Select Category</label>
+                    <select id="category"
+                        class="mt-2 block w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="linux">Linux</option>
+                        <option value="devops">DevOps</option>
+                        <option value="cms">CMS</option>
+                        <option value="code">Programming (Python, PHP, JS)</option>
+                        <option value="cloud">Cloud</option>
+                        <option value="docker">Docker</option>
+                        <option value="kubernetes">Kubernetes</option>
+                        <option value="sql">SQL</option>
+                        <option value="react">React</option>
+                        <option value="Apache Kafka">Apache Kafka</option>
+                        <option value="laravel">Laravel</option>
+                        <option value="postgres">Postgres</option>
+                        <option value="django">Django</option>
+                        <option value="nodejs">Node.js</option>
+                        <option value="wordpress">Wordpress</option>
+                        <option value="nextjs">Next.js</option>
+                        <option value="vuejs">Vue.js</option>
+                        <option value="cpanel">cPanel</option>
+                    </select>
+                </div>
+
+                <!-- Start Quiz Button -->
+                <div class="text-center">
+                    <button type="button" id="startQuizBtn"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Start Quiz
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quiz Content (Initially hidden) -->
+            <div id="quiz-content" class="hidden mt-8">
+
+                <!-- Quiz Title -->
+                <h1 class="text-3xl font-bold text-center text-blue-600 mb-6"></h1>
+
+                <!-- Question Container -->
+                <div id="question-container" class="mb-4">
+                    <p id="question" class="text-xl text-gray-700"></p>
+                </div>
+
+                <!-- Answer Options -->
+                <div id="answers-container" class="space-y-4">
+                    <!-- Dynamic buttons will be inserted here -->
+                    <button id="answer-option"
+                        class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 focus:outline-none"></button>
+                </div>
+
+                <!-- Feedback & Score -->
+                <div id="feedback" class="text-center mt-6">
+                    <p id="score" class="text-lg text-gray-800"></p>
+                </div>
+
+                <!-- Restart and next question Button -->
+                <div id="restart-next-buttons" class="text-center mt-6 flex space-x-4 hidden">
+                    <button id="restartButton"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Restart game
+                    </button>
+                    <button id="nextButton"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Next Question
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="index.js"></script>
+
+</body>
+
+</html>
