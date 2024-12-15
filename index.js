@@ -11,27 +11,6 @@ let scoreValue = document.querySelector("#scoreValue");
 let score = 0;
 let difficulty, category;
 
-async function fecthQuiz(difficulty, category) {
-
-    try {
-        const quiz = await fetch(`${API}/questions?apiKey=${API_TOKEN}&limit=1&difficulty=${difficulty}&category=${category}`)
-        const quizData = await quiz.json()
-        displayQuiz(quizData);
-
-    } catch (error) {
-        console.log(`Error while fetching quiz: ${error}`);
-        return;
-    }
-}
-
-function displayQuiz(quizData) {
-
-    const { restartButton, nextButton } = singleQuizQuestion(quizData);
-
-    restartButton.addEventListener("click", () => restartBtn())
-    nextButton.addEventListener("click", () => fecthQuiz(difficulty, category));
-};
-
 function updateScore(restart) {
     if (restart === 0) {
         score = 0;
@@ -43,159 +22,175 @@ function updateScore(restart) {
     }
 }
 
-function singleQuizQuestion(quiz) {
-    console.log(quiz);
+let nextButton;
 
-    initalSetUp.classList.add("hidden")
-    quizContent.classList.remove("hidden")
+async function fetchQuiz(difficulty, category) {
+    try {
+        // Disable the next button to prevent multiple clicks during fetch
+        if (nextButton) {
+            explanation.classList.add("hidden");
+            nextButton.disabled = true;
+        }
+
+        const response = await fetch(`${API}/questions?apiKey=${API_TOKEN}&limit=1&difficulty=${difficulty}&category=${category}`);
+        const quizData = await response.json();
+        displayQuiz(quizData);
+
+        // Enable the next button once the new quiz is loaded
+        if (nextButton) {
+            nextButton.disabled = false;
+        }
+
+    } catch (error) {
+        console.error(`Error while fetching quiz: ${error}`);
+        if (nextButton) {
+            nextButton.disabled = false;
+        }
+    }
+}
+
+function displayQuiz(quizData) {
+    const { restartButton, nextButton: newNextButton } = renderQuizQuestion(quizData);
+
+    // Remove any previous event listener to prevent multiple fetches
+    if (nextButton) {
+        nextButton.removeEventListener("click", nextButtonClick);
+    }
+
+    // Store the new nextButton reference
+    nextButton = newNextButton;
+
+    // Add the event listener for the new nextButton
+    nextButton.addEventListener("click", nextButtonClick);
+
+    // Add the event listener for the restart button
+    restartButton.addEventListener("click", restartBtn);
+}
+
+function nextButtonClick() {
+    // Only fetch new question if the button is not disabled
+    if (!nextButton.disabled) {
+        fetchQuiz(difficulty, category);
+    }
+}
+
+function restartBtn() {
+    updateScore(0);
+    initalSetUp.classList.remove("hidden");
+    quizContent.classList.add("hidden");
+
+    // Disable next button on restart to prevent accidental fetch
+    if (nextButton) {
+        nextButton.disabled = true;
+    }
+}
+
+function renderQuizQuestion(quiz) {
+    const quizInfo = quiz[0];
+    initalSetUp.classList.add("hidden");
+    quizContent.classList.remove("hidden");
 
     const quizTitle = document.querySelector("#quizTitle");
-    quizTitle.textContent = quiz[0].tags[0].name;
+    quizTitle.textContent = quizInfo.tags[0]?.name || 'No category';
 
     const mcqOrmsq = document.querySelector("#mcqOrmsq");
-
-    if (quiz[0].multiple_correct_answers === true) {
-        mcqOrmsq.textContent = `Multiple Select Question`;
-    } else {
-        mcqOrmsq.textContent = `Multiple Choice Question`;
-    }
+    mcqOrmsq.textContent = quizInfo.multiple_correct_answers ? 'Multiple Select Question' : 'Multiple Choice Question';
 
     const question = document.querySelector("#question");
-    question.textContent = `Question - ${quiz[0].question}`;
+    question.textContent = `Question - ${quizInfo.question}`;
 
     const description = document.querySelector("#description");
-    if (quiz[0].description != null) {
-        description.textContent = `Description - ${quiz[0].description}`;
-    }
+    description.textContent = quizInfo.description ? `Description - ${quizInfo.description}` : '';
 
     const restartNextButtons = document.querySelector("#restart-next-buttons");
     restartNextButtons.classList.remove("hidden");
 
     const restartButton = document.querySelector("#restartButton");
-    const nextButton = document.querySelector("#nextButton")
+    const nextButton = document.querySelector("#nextButton");
 
-    answersContainer.innerHTML = ''; // Clears previous answers
+    answersContainer.innerHTML = ''; // Clear previous answers
+    const answerOptions = quizInfo.answers; // This is an object
+    const correctAnswers = quizInfo.correct_answers;
 
-    const answerOptions = quiz[0].answers;
-
-    const correctAnswers = quiz[0].correct_answers;
-    // console.log(correctAnswers);
-
-    let rightAnswer = '';
-    const rightAnswers = [];
-
-    for (let answer in correctAnswers) {
-
-        // if MSQ so correct answer > 1 , store in arr
-        if (quiz[0].multiple_correct_answers === "true") {
-
+    let rightAnswers = [];
+    if (quizInfo.multiple_correct_answers === true) {
+        // Collect all correct answers for MSQ (Multiple Select Question)
+        for (let answer in correctAnswers) {
             if (correctAnswers[answer] === "true") {
-                rightAnswers.push(answer);
+                const correctAnswer = answer.replace('_correct', '');
+                rightAnswers.push(correctAnswer);
             }
-
-            // In MCQ only 1 ans is correct so store it
-        } else {
+        }
+    } else {
+        // Only one correct answer for MCQ (Multiple Choice Question)
+        for (let answer in correctAnswers) {
             if (correctAnswers[answer] === "true") {
-                rightAnswer = answer;
+                const correctAnswer = answer.replace('_correct', '');
+                rightAnswers = [correctAnswer];
                 break;
             }
         }
     }
-    // console.log(rightAnswer);
 
-    const explanationOfAnswer = quiz[0].explanation;
-    console.log(explanationOfAnswer);
+    const explanationOfAnswer = quizInfo.explanation;
 
-
-    for (let answerText in answerOptions) {
-        if (answerOptions[answerText] != null) {
+    // Iterate over the answer options (Object.entries converts object to an array of [key, value] pairs)
+    Object.entries(answerOptions).forEach(([answerKey, answerText]) => {
+        if (answerText != null) {
             const option = document.createElement("button");
             option.classList.add("w-full", "bg-blue-500", "text-white", "py-2", "rounded", "hover:bg-blue-600", "focus:outline-none");
-            option.textContent = answerOptions[answerText];
+            option.textContent = answerText;
 
             let isAnswered = false;
-
             option.addEventListener('click', () => {
                 if (isAnswered) return;
-
                 isAnswered = true;
 
-                console.log(answerText);
+                // Check if the selected answer is correct
+                const isCorrect = rightAnswers.includes(answerKey);
 
-                if (quiz[0].multiple_correct_answers === "false") {
-                    let ans = rightAnswer.slice(0, 8);
-                    console.log(ans);
-                    if (answerText === ans) {
-                        option.classList.add("bg-green-700")
-                        // console.log(`Ans selected: ${answerText}`);
-                        updateScore();
-                    } else {
-                        if (explanationOfAnswer != null) {
-                            const explanationText = document.createElement("p");
-                            explanationText.textContent = explanationOfAnswer;
-                            explanation.appendChild(explanationText)
-
-                            explanation.classList.toggle("hidden");
-                        }
-
-                        option.classList.add("bg-red-800")
+                if (isCorrect) {
+                    option.classList.add("bg-green-700");
+                    updateScore();
+                } else {
+                    option.classList.add("bg-red-800");
+                    if (explanationOfAnswer) {
+                        const explanationText = document.createElement("p");
+                        explanationText.textContent = explanationOfAnswer;
+                        explanation.appendChild(explanationText);
+                        explanation.classList.remove("hidden");
                     }
                 }
 
                 disableOtherOptions();
-            })
+            });
 
             answersContainer.appendChild(option);
         }
-    }
+    });
 
     restartNextButtons.appendChild(restartButton);
     restartNextButtons.appendChild(nextButton);
-
     quizContent.appendChild(quizTitle);
     quizContent.appendChild(mcqOrmsq);
     quizContent.appendChild(question);
     quizContent.appendChild(description);
     quizContent.appendChild(explanation);
-    quizContent.appendChild(answersContainer)
+    quizContent.appendChild(answersContainer);
     quizContent.appendChild(restartNextButtons);
 
     return { restartButton, nextButton };
-}
-
-
-function nextBtn() {
-    console.log("btn cliclks");
-    fecthQuiz(difficulty, category)
-}
-
-function restartBtn() {
-    updateScore(0);
-    initalSetUp.classList.remove("hidden")
-    quizContent.classList.add("hidden")
 }
 
 function disableOtherOptions() {
     const buttons = answersContainer.querySelectorAll("button");
     buttons.forEach(btn => {
         btn.disabled = true;
-    })
+    });
 }
-
-// function displayQuiz(quizData) {
-
-//     const { restartButton, nextButton } = singleQuizQuestion(quizData);
-
-//     restartButton.addEventListener("click", () => restartBtn())
-//     nextButton.addEventListener("click", () => fecthQuiz(difficulty, category));
-// };
-
 
 startQuizBtn.addEventListener('click', () => {
     difficulty = document.querySelector("#difficulty").value;
     category = document.querySelector("#category").value;
-    console.log(difficulty);
-    console.log(category);
-
-    fecthQuiz(difficulty, category);
-})
+    fetchQuiz(difficulty, category);
+});
